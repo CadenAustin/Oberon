@@ -1,4 +1,4 @@
-use ash::{vk, version::DeviceV1_0};
+use ash::vk;
 use winit::event::{Event, WindowEvent};
 extern crate ceaser;
 

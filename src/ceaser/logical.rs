@@ -1,4 +1,4 @@
-use ash::{vk, version::{InstanceV1_0, DeviceV1_0}};
+use ash::vk;
 use crate::queue::{QueueFamilies, Queues};
 
 pub fn init_device_and_queues(

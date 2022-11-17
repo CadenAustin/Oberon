@@ -1,4 +1,4 @@
-use ash::{vk, version::DeviceV1_0};
+use ash::vk;
 
 use crate::{queue::Pools, swap_chain::Swapchain, pipeline::Pipeline};
 
@@ -21,6 +21,8 @@ pub fn fill_command_buffers(
     render_pass: &vk::RenderPass,
     swapchain: &Swapchain,
     pipeline: &Pipeline,
+    vb1: &vk::Buffer,
+    vb2: &vk::Buffer,
 ) -> Result<(), vk::Result> {
     for (i, &command_buffer) in command_buffers.iter().enumerate() {
         let command_buffer_begininfo = vk::CommandBufferBeginInfo::builder();
@@ -55,7 +57,9 @@ pub fn fill_command_buffers(
                 pipeline.pipeline,
             );
 
-            logical_device.cmd_draw(command_buffer, 1, 1, 0, 0);
+            logical_device.cmd_bind_vertex_buffers(command_buffer, 0, &[*vb1], &[0]);
+            logical_device.cmd_bind_vertex_buffers(command_buffer, 1, &[*vb2], &[0]);
+            logical_device.cmd_draw(command_buffer, 6, 1, 0, 0);
             logical_device.cmd_end_render_pass(command_buffer);
             logical_device.end_command_buffer(command_buffer)?;
         }

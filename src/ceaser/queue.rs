@@ -1,4 +1,4 @@
-use ash::{vk, version::{InstanceV1_0, DeviceV1_0}};
+use ash::vk;
 use crate::surface::Surface;
 
 pub struct QueueFamilies {

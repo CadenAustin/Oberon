@@ -8,10 +8,11 @@ resolver = "2"
 
 [dependencies]
 cressida = "0.1.0"
-ash="0.30.0"
+ash="0.37.0"
 winit = "0.26.1"
 egui = "0.16.1"
 vk-shader-macros = "0.2.2"
+gpu-allocator = "0.21.0"
 
 [lib]
 name = "ceaser"

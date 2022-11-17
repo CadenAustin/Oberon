@@ -1,4 +1,4 @@
-use ash::{vk, version::InstanceV1_0};
+use ash::vk;
 
 pub struct Device {
     pub physical_device: vk::PhysicalDevice,

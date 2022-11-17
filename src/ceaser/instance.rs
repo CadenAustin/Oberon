@@ -1,4 +1,4 @@
-use ash::version::{EntryV1_0};
+
 use ash::vk;
 
 unsafe extern "system" fn vulkan_debug_utils_callback(
@@ -17,7 +17,7 @@ unsafe extern "system" fn vulkan_debug_utils_callback(
 pub fn init_instance(
     entry: &ash::Entry,
     layer_names: &[&str],
-) -> Result<ash::Instance, ash::InstanceError> {
+) -> Result<ash::Instance, ash::vk::Result> {
     let enginename = std::ffi::CString::new("Oberon").unwrap();
     let appname = std::ffi::CString::new("The Black Window").unwrap();
     let app_info = vk::ApplicationInfo::builder()

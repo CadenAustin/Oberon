@@ -1,4 +1,4 @@
-use ash::{vk, version::DeviceV1_0};
+use ash::vk;
 
 use crate::swap_chain::Swapchain;
 
@@ -32,9 +32,43 @@ impl Pipeline {
             .module(fragmentshader_module)
             .name(&mainfunctionname);
         let shader_stages = vec![vertexshader_stage.build(), fragmentshader_stage.build()];
-        let vertex_input_info = vk::PipelineVertexInputStateCreateInfo::builder();
+        let vertex_attrib_descs = [
+            vk::VertexInputAttributeDescription {
+                binding: 0,
+                location: 0,
+                offset: 0,
+                format: vk::Format::R32G32B32A32_SFLOAT,
+            },
+            vk::VertexInputAttributeDescription {
+                binding: 1,
+                location: 1,
+                offset: 0,
+                format: vk::Format::R32_SFLOAT,
+            },
+            vk::VertexInputAttributeDescription {
+                binding: 1,
+                location: 2,
+                offset: 4,
+                format: vk::Format::R32G32B32A32_SFLOAT,
+            },
+        ];
+        let vertex_binding_descs = [
+            vk::VertexInputBindingDescription {
+                binding: 0,
+                stride: 16,
+                input_rate: vk::VertexInputRate::VERTEX,
+            },
+            vk::VertexInputBindingDescription {
+                binding: 1,
+                stride: 20,
+                input_rate: vk::VertexInputRate::VERTEX,
+            },
+        ];
+        let vertex_input_info = vk::PipelineVertexInputStateCreateInfo::builder()
+            .vertex_attribute_descriptions(&vertex_attrib_descs)
+            .vertex_binding_descriptions(&vertex_binding_descs);
         let input_assembly_info = vk::PipelineInputAssemblyStateCreateInfo::builder()
-            .topology(vk::PrimitiveTopology::POINT_LIST);
+            .topology(vk::PrimitiveTopology::TRIANGLE_LIST);
         let viewports = [vk::Viewport {
             x: 0.,
             y: 0.,

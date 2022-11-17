@@ -97,6 +97,9 @@ impl Ceaser {
 impl Drop for Ceaser {
     fn drop(&mut self) {
         unsafe {
+            self.logical_device
+                .device_wait_idle()
+                .expect("something wrong while waiting");
             self.pools.cleanup(&self.logical_device);
             self.pipeline.cleanup(&self.logical_device);
             self.logical_device.destroy_render_pass(self.render_pass, None);

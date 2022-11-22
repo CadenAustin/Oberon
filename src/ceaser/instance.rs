@@ -1,5 +1,6 @@
 
 use ash::vk;
+use ash_window::enumerate_required_extensions;
 
 unsafe extern "system" fn vulkan_debug_utils_callback(
     message_severity: vk::DebugUtilsMessageSeverityFlagsEXT,
@@ -17,6 +18,7 @@ unsafe extern "system" fn vulkan_debug_utils_callback(
 pub fn init_instance(
     entry: &ash::Entry,
     layer_names: &[&str],
+    window: &winit::window::Window,
 ) -> Result<ash::Instance, ash::vk::Result> {
     let enginename = std::ffi::CString::new("Oberon").unwrap();
     let appname = std::ffi::CString::new("The Black Window").unwrap();
@@ -34,11 +36,11 @@ pub fn init_instance(
         .iter()
         .map(|layer_name| layer_name.as_ptr())
         .collect();
-    let extension_name_pointers: Vec<*const i8> = vec![
+    let mut extension_name_pointers: Vec<*const i8> = vec![
         ash::extensions::ext::DebugUtils::name().as_ptr(),
         ash::extensions::khr::Surface::name().as_ptr(),
-        ash::extensions::khr::Win32Surface::name().as_ptr(),
     ];
+    extension_name_pointers.extend_from_slice(enumerate_required_extensions(window)?);
 
     let mut debugcreateinfo = vk::DebugUtilsMessengerCreateInfoEXT::builder()
         .message_severity(

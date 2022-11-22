@@ -1,24 +1,21 @@
 use ash::vk;
-use winit::platform::windows::WindowExtWindows;
+use ash_window;
 
 pub struct Surface {
-    pub win32_surface_loader: ash::extensions::khr::Win32Surface,
-    pub surface: vk::SurfaceKHR,
     pub surface_loader: ash::extensions::khr::Surface,
+    pub surface: vk::SurfaceKHR,
 }
 
 impl Surface {
-    pub fn new(window: &winit::window::Window,
+    pub fn new(
+        window: &winit::window::Window,
         entry: &ash::Entry,
-        instance: &ash::Instance) -> Result<Surface, vk::Result>{
-        let win32_surface_create_info = vk::Win32SurfaceCreateInfoKHR::builder()
-            .hwnd(window.hwnd())
-            .hinstance(window.hinstance());
-        let win32_surface_loader = ash::extensions::khr::Win32Surface::new(entry, instance);
-        let surface =
-            unsafe { win32_surface_loader.create_win32_surface(&win32_surface_create_info, None) }?;
+        instance: &ash::Instance
+    ) -> Result<Surface, vk::Result>
+    {
         let surface_loader = ash::extensions::khr::Surface::new(entry, instance);
-        Ok(Self { win32_surface_loader, surface, surface_loader })
+        let surface = unsafe { ash_window::create_surface(entry, instance, window, None)? };
+        Ok(Self { surface_loader, surface })
     }
 
     pub fn get_capabilities(

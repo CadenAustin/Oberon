@@ -12,7 +12,7 @@ impl Device {
             let mut chosen = None;
             for p in phys_devs {
                 let properties = unsafe { instance.get_physical_device_properties(p) };
-                if properties.device_type == vk::PhysicalDeviceType::DISCRETE_GPU {
+                if properties.device_type == vk::PhysicalDeviceType::DISCRETE_GPU || properties.device_type == vk::PhysicalDeviceType::INTEGRATED_GPU {
                     chosen = Some((p, properties));
                 }
             }

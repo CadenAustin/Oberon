@@ -39,7 +39,7 @@ impl Ceaser {
     pub fn new(window: Window) -> Result<Ceaser, Box<dyn std::error::Error>> {
         let entry = unsafe { ash::Entry::load()? };
         let layer_names = vec!["VK_LAYER_KHRONOS_validation"];
-        let instance = instance::init_instance(&entry, &layer_names)?;
+        let instance = instance::init_instance(&entry, &layer_names, &window)?;
         let debug = instance::Debug::new(&entry, &instance)?;
         let surfaces = surface::Surface::new(&window, &entry, &instance)?;
         let device = device::Device::new(&instance)?;

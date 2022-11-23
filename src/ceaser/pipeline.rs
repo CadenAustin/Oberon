@@ -1,10 +1,10 @@
+use crate::ceaser::swap_chain::Swapchain;
 use ash::vk;
-
-use crate::swap_chain::Swapchain;
 
 pub struct Pipeline {
     pub pipeline: vk::Pipeline,
     pub layout: vk::PipelineLayout,
+    pub descriptor_set_layouts: Vec<vk::DescriptorSetLayout>,
 }
 
 impl Pipeline {
@@ -82,6 +82,21 @@ impl Pipeline {
                 input_rate: vk::VertexInputRate::INSTANCE,
             },
         ];
+
+        let descriptorset_layout_binding_descs = [vk::DescriptorSetLayoutBinding::builder()
+            .binding(0)
+            .descriptor_type(vk::DescriptorType::UNIFORM_BUFFER)
+            .descriptor_count(1)
+            .stage_flags(vk::ShaderStageFlags::VERTEX)
+            .build()];
+
+        let descriptorset_layout_info = vk::DescriptorSetLayoutCreateInfo::builder()
+            .bindings(&descriptorset_layout_binding_descs);
+        let descriptorsetlayout = unsafe {
+            logical_device.create_descriptor_set_layout(&descriptorset_layout_info, None)
+        }?;
+        let desclayouts = vec![descriptorsetlayout];
+
         let vertex_input_info = vk::PipelineVertexInputStateCreateInfo::builder()
             .vertex_attribute_descriptions(&vertex_attrib_descs)
             .vertex_binding_descriptions(&vertex_binding_descs);
@@ -107,10 +122,14 @@ impl Pipeline {
             .line_width(1.0)
             .front_face(vk::FrontFace::COUNTER_CLOCKWISE)
             .cull_mode(vk::CullModeFlags::NONE)
-            .polygon_mode(vk::PolygonMode::FILL);
+            .polygon_mode(vk::PolygonMode::LINE);
         let multisampler_info = vk::PipelineMultisampleStateCreateInfo::builder()
             .rasterization_samples(vk::SampleCountFlags::TYPE_1);
-        let colourblend_attachments = [vk::PipelineColorBlendAttachmentState::builder()
+        let depth_stencil_info = vk::PipelineDepthStencilStateCreateInfo::builder()
+            .depth_test_enable(true)
+            .depth_write_enable(true)
+            .depth_compare_op(vk::CompareOp::LESS_OR_EQUAL);
+        let colorblend_attachments = [vk::PipelineColorBlendAttachmentState::builder()
             .blend_enable(true)
             .src_color_blend_factor(vk::BlendFactor::SRC_ALPHA)
             .dst_color_blend_factor(vk::BlendFactor::ONE_MINUS_SRC_ALPHA)
@@ -125,9 +144,9 @@ impl Pipeline {
                     | vk::ColorComponentFlags::A,
             )
             .build()];
-        let colourblend_info =
-            vk::PipelineColorBlendStateCreateInfo::builder().attachments(&colourblend_attachments);
-        let pipelinelayout_info = vk::PipelineLayoutCreateInfo::builder();
+        let colorblend_info =
+            vk::PipelineColorBlendStateCreateInfo::builder().attachments(&colorblend_attachments);
+        let pipelinelayout_info = vk::PipelineLayoutCreateInfo::builder().set_layouts(&desclayouts);
         let pipelinelayout =
             unsafe { logical_device.create_pipeline_layout(&pipelinelayout_info, None) }?;
         let pipeline_info = vk::GraphicsPipelineCreateInfo::builder()
@@ -137,7 +156,8 @@ impl Pipeline {
             .viewport_state(&viewport_info)
             .rasterization_state(&rasterizer_info)
             .multisample_state(&multisampler_info)
-            .color_blend_state(&colourblend_info)
+            .depth_stencil_state(&depth_stencil_info)
+            .color_blend_state(&colorblend_info)
             .layout(pipelinelayout)
             .render_pass(*renderpass)
             .subpass(0);
@@ -157,12 +177,15 @@ impl Pipeline {
         Ok(Pipeline {
             pipeline: graphicspipeline,
             layout: pipelinelayout,
+            descriptor_set_layouts: desclayouts,
         })
     }
 
-    
     pub fn cleanup(&self, logical_device: &ash::Device) {
         unsafe {
+            for dsl in &self.descriptor_set_layouts {
+                logical_device.destroy_descriptor_set_layout(*dsl, None);
+            }
             logical_device.destroy_pipeline(self.pipeline, None);
             logical_device.destroy_pipeline_layout(self.layout, None);
         }

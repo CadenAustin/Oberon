@@ -1,7 +1,7 @@
 use ash::vk;
 use gpu_allocator::vulkan::{Allocator, AllocatorCreateDesc};
 
-use crate::{surface::Surface, queue::{QueueFamilies, Queues}};
+use crate::ceaser::{surface::Surface, queue::{QueueFamilies, Queues}};
 
 pub struct Swapchain {
     pub swapchain_loader: ash::extensions::khr::Swapchain,
@@ -80,20 +80,21 @@ impl Swapchain {
             depth: 1,
         };
         let depth_image_info = vk::ImageCreateInfo::builder()
-            .image_type(vk::ImageType::TYPE_2D)
-            .format(vk::Format::D32_SFLOAT)
-            .extent(extent3d)
-            .mip_levels(1)
-            .array_layers(1)
-            .samples(vk::SampleCountFlags::TYPE_1)
-            .tiling(vk::ImageTiling::OPTIMAL)
-            .usage(vk::ImageUsageFlags::DEPTH_STENCIL_ATTACHMENT)
-            .sharing_mode(vk::SharingMode::EXCLUSIVE)
-            .queue_family_indices(&queuefamilies);
+                .image_type(vk::ImageType::TYPE_2D)
+                .format(vk::Format::D32_SFLOAT)
+                .extent(extent3d)
+                .mip_levels(1)
+                .array_layers(1)
+                .samples(vk::SampleCountFlags::TYPE_1)
+                .tiling(vk::ImageTiling::OPTIMAL)
+                .usage(vk::ImageUsageFlags::DEPTH_STENCIL_ATTACHMENT)
+                .sharing_mode(vk::SharingMode::EXCLUSIVE)
+                .queue_family_indices(&queuefamilies);
 
         let depth_image = unsafe {
             logical_device.create_image(&depth_image_info, None)
         }.unwrap();
+        
         let requirements = unsafe { logical_device.get_image_memory_requirements(depth_image) };
         let depth_image_allocation_info = gpu_allocator::vulkan::AllocationCreateDesc {
             name: "Z_Buffer Image",

@@ -1,5 +1,5 @@
 use ash::vk;
-use crate::surface::Surface;
+use crate::ceaser::surface::Surface;
 
 pub struct QueueFamilies {
     pub graphics_q_index: Option<u32>,

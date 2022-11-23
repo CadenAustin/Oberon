@@ -1,5 +1,5 @@
+use crate::ceaser::buffer::Buffer;
 use ash::vk;
-use crate::buffer::Buffer;
 
 #[derive(Debug, Clone)]
 pub struct InvalidHandle;
@@ -22,12 +22,14 @@ pub struct InstanceData {
 
 pub struct Model<V, I> {
     pub vertexdata: Vec<V>,
+    pub indexdata: Vec<u32>,
     pub handle_to_index: std::collections::HashMap<usize, usize>,
     pub handles: Vec<usize>,
     pub instances: Vec<I>,
     pub first_invisible: usize,
     pub next_handle: usize,
     pub vertexbuffer: Option<Buffer>,
+    pub indexbuffer: Option<Buffer>,
     pub instancebuffer: Option<Buffer>,
 }
 
@@ -123,7 +125,7 @@ impl<V, I> Model<V, I> {
 
     pub fn insert_visibly(&mut self, element: I) -> usize {
         let new_handle = self.insert(element);
-        self.make_visible(new_handle).ok();//can't go wrong, see previous line
+        self.make_visible(new_handle).ok(); //can't go wrong, see previous line
         new_handle
     }
 
@@ -166,59 +168,100 @@ impl<V, I> Model<V, I> {
         }
     }
 
+    pub fn update_indexbuffer(
+        &mut self,
+        logical_device: &ash::Device,
+        allocator: &mut gpu_allocator::vulkan::Allocator,
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        if let Some(buffer) = &mut self.indexbuffer {
+            buffer.fill(logical_device, allocator, &self.indexdata)?;
+            Ok(())
+        } else {
+            let bytes = (self.indexdata.len() * std::mem::size_of::<V>()) as u64;
+            let mut buffer = Buffer::new(
+                logical_device,
+                allocator,
+                bytes,
+                vk::BufferUsageFlags::INDEX_BUFFER,
+                gpu_allocator::MemoryLocation::CpuToGpu,
+            )?;
+            buffer.fill(logical_device, allocator, &self.indexdata)?;
+            self.indexbuffer = Some(buffer);
+            Ok(())
+        }
+    }
+
     pub fn update_instancebuffer(
         &mut self,
         logical_device: &ash::Device,
         allocator: &mut gpu_allocator::vulkan::Allocator,
     ) -> Result<(), Box<dyn std::error::Error>> {
         if let Some(buffer) = &mut self.instancebuffer {
-            buffer.fill(logical_device, allocator, &self.instances[0..self.first_invisible])?;
-            Ok(())
-        } else {
-            let bytes = (self.first_invisible * std::mem::size_of::<I>()) as u64; 
-            let mut buffer = Buffer::new(
+            buffer.fill(
                 logical_device,
                 allocator,
-                bytes,
-                vk::BufferUsageFlags::VERTEX_BUFFER,
-                gpu_allocator::MemoryLocation::CpuToGpu,
+                &self.instances[0..self.first_invisible],
             )?;
-            buffer.fill(logical_device, allocator, &self.instances[0..self.first_invisible])?;
-            self.instancebuffer = Some(buffer);
+            Ok(())
+        } else {
+            let bytes = (self.first_invisible * std::mem::size_of::<I>()) as u64;
+            if bytes > 0 {
+                let mut buffer = Buffer::new(
+                    logical_device,
+                    allocator,
+                    bytes,
+                    vk::BufferUsageFlags::VERTEX_BUFFER,
+                    gpu_allocator::MemoryLocation::CpuToGpu,
+                )?;
+                buffer.fill(
+                    logical_device,
+                    allocator,
+                    &self.instances[0..self.first_invisible],
+                )?;
+                self.instancebuffer = Some(buffer);
+            }
             Ok(())
         }
     }
 
     pub fn draw(&self, logical_device: &ash::Device, commandbuffer: vk::CommandBuffer) {
         if let Some(vertexbuffer) = &self.vertexbuffer {
-            if let Some(instancebuffer) = &self.instancebuffer {
-                if self.first_invisible > 0 {
-                    unsafe {
-                        logical_device.cmd_bind_vertex_buffers(
-                            commandbuffer,
-                            0,
-                            &[vertexbuffer.buffer],
-                            &[0],
-                        );
-                        logical_device.cmd_bind_vertex_buffers(
-                            commandbuffer,
-                            1,
-                            &[instancebuffer.buffer],
-                            &[0],
-                        );
-                        logical_device.cmd_draw(
-                            commandbuffer,
-                            self.vertexdata.len() as u32,
-                            self.first_invisible as u32,
-                            0,
-                            0,
-                        );
+            if let Some(indexbuffer) = &self.indexbuffer {
+                if let Some(instancebuffer) = &self.instancebuffer {
+                    if self.first_invisible > 0 {
+                        unsafe {
+                            logical_device.cmd_bind_index_buffer(
+                                commandbuffer,
+                                indexbuffer.buffer,
+                                0,
+                                vk::IndexType::UINT32,
+                            );
+                            logical_device.cmd_bind_vertex_buffers(
+                                commandbuffer,
+                                0,
+                                &[vertexbuffer.buffer],
+                                &[0],
+                            );
+                            logical_device.cmd_bind_vertex_buffers(
+                                commandbuffer,
+                                1,
+                                &[instancebuffer.buffer],
+                                &[0],
+                            );
+                            logical_device.cmd_draw_indexed(
+                                commandbuffer,
+                                self.indexdata.len() as u32,
+                                self.first_invisible as u32,
+                                0,
+                                0,
+                                0,
+                            );
+                        }
                     }
                 }
             }
         }
     }
-
 }
 
 mod primitives;

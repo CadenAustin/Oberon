@@ -1,5 +1,3 @@
-use std::fmt::Error;
-
 use ash::vk;
 
 pub struct Buffer {

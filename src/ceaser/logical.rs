@@ -1,5 +1,5 @@
 use ash::vk;
-use crate::queue::{QueueFamilies, Queues};
+use crate::ceaser::queue::{QueueFamilies, Queues};
 
 pub fn init_device_and_queues(
     instance: &ash::Instance,

@@ -2,8 +2,10 @@ use ash::vk;
 use ash::vk::CommandBuffer;
 use command_buffer::create_command_buffers;
 use gpu_allocator::{vulkan::{Allocator, AllocatorCreateDesc, AllocationCreateDesc, Allocation}, MemoryLocation};
+use model::{Model, InstanceData};
 use std::mem::ManuallyDrop;
 use winit::window::Window;
+use nalgebra as na;
 
 pub mod command_buffer;
 pub mod device;
@@ -15,6 +17,7 @@ pub mod render_pass;
 pub mod surface;
 pub mod swap_chain;
 pub mod buffer;
+pub mod model;
 
 pub struct Ceaser {
     pub window: winit::window::Window,
@@ -32,7 +35,7 @@ pub struct Ceaser {
     pub pools: queue::Pools,
     pub command_buffers: Vec<CommandBuffer>,
     pub allocator: Allocator,
-    buffers: Vec<buffer::Buffer>,
+    models: Vec<Model<[f32; 3], InstanceData>>,
 }
 
 impl Ceaser {
@@ -51,24 +54,6 @@ impl Ceaser {
             &queue_families,
             &layer_names,
         )?;
-        let mut swapchain = swap_chain::Swapchain::new(
-            &instance,
-            device.physical_device,
-            &logical_device,
-            &surfaces,
-            &queue_families,
-            &queues,
-        )?;
-
-        let render_pass =
-            render_pass::init_renderpass(&logical_device, device.physical_device, &surfaces)?;
-
-        swapchain.create_framebuffers(&logical_device, render_pass)?;
-
-        let pipeline = pipeline::Pipeline::new(&logical_device, &swapchain, &render_pass)?;
-
-        let pools = queue::Pools::new(&logical_device, &queue_families)?;
-
         let mut allocator = Allocator::new(&AllocatorCreateDesc {
             instance: instance.clone(),
             device: logical_device.clone(),
@@ -77,41 +62,47 @@ impl Ceaser {
             buffer_device_address: false,
         })?;
 
-        let buffer_data_1 = &[
-            0.5f32, 0.0f32, 0.0f32, 1.0f32, 0.0f32, 0.2f32, 0.0f32, 1.0f32, -0.5f32, 0.0f32,
-            0.0f32, 1.0f32, -0.9f32, -0.9f32, 0.0f32, 1.0f32, 0.3f32, -0.8f32, 0.0f32, 1.0f32,
-            0.0f32, -0.6f32, 0.0f32, 1.0f32,
-        ];
-        let buffer1 = buffer::Buffer::new(
+        let mut swapchain = swap_chain::Swapchain::new(
+            &instance,
+            device.physical_device,
             &logical_device,
-            &mut allocator,
-            (buffer_data_1.len() * 4) as u64,
-            vk::BufferUsageFlags::VERTEX_BUFFER,
-            MemoryLocation::CpuToGpu,
+            &surfaces,
+            &queue_families,
+            &queues,
+            &mut allocator
         )?;
-        buffer1.fill(
-            &allocator,
-            buffer_data_1,
-        )?;
-        let buffer_data_2 = &[
-            15.0f32, 0.0f32, 1.0f32, 0.0f32, 1.0f32, 15.0f32, 0.0f32, 1.0f32, 0.0f32, 1.0f32,
-            15.0f32, 0.0f32, 1.0f32, 0.0f32, 1.0f32, 1.0f32, 0.8f32, 0.7f32, 0.0f32, 1.0f32,
-            1.0f32, 0.8f32, 0.7f32, 0.0f32, 1.0f32, 1.0f32, 0.8f32, 0.7f32, 0.0f32, 1.0f32,
-        ];
 
-        let buffer2 = buffer::Buffer::new(
-            &logical_device,
-            &mut allocator,
-            (buffer_data_2.len() * 4) as u64,
-            vk::BufferUsageFlags::VERTEX_BUFFER,
-            MemoryLocation::CpuToGpu,
-        )?;
-        buffer2.fill(
-            &allocator,
-            buffer_data_2,
-        )?;
+        let render_pass =
+            render_pass::init_render_pass(&logical_device, surfaces
+                .get_formats(device.physical_device)?
+                .first()
+                .unwrap()
+                .format)?;
+
+        swapchain.create_framebuffers(&logical_device, render_pass)?;
+
+        let pipeline = pipeline::Pipeline::new(&logical_device, &swapchain, &render_pass)?;
+
+        let pools = queue::Pools::new(&logical_device, &queue_families)?;
 
         let command_buffers = create_command_buffers(&logical_device, &pools, swapchain.amount_of_images as usize)?;
+
+        let mut cube = Model::cube();
+        cube.insert_visibly(InstanceData {
+            model_matrix: (na::Matrix4::new_translation(&na::Vector3::new(0.05, 0.05, 0.0))
+                * na::Matrix4::new_scaling(0.1))
+            .into(),
+            color: [1.0, 1.0, 0.2],
+        });
+        cube.insert_visibly(InstanceData {
+            model_matrix: (na::Matrix4::new_translation(&na::Vector3::new(0.0, 0.0, 0.1))
+                * na::Matrix4::new_scaling(0.1))
+            .into(),
+            color: [0.2, 0.4, 1.0],
+        });
+        cube.update_vertexbuffer(&logical_device, &mut allocator);
+        cube.update_instancebuffer(&logical_device, &mut allocator);
+        let models = vec![cube];
 
         command_buffer::fill_command_buffers(
             &command_buffers,
@@ -119,11 +110,8 @@ impl Ceaser {
             &render_pass,
             &swapchain,
             &pipeline,
-            &buffer1.buffer,
-            &buffer2.buffer
+            &models
         )?;
-        
-        let buffers = vec![buffer1, buffer2];
 
         Ok(Self {
             window,
@@ -141,7 +129,7 @@ impl Ceaser {
             pools,
             command_buffers,
             allocator,
-            buffers,
+            models,
         })
     }
 }
@@ -153,9 +141,15 @@ impl Drop for Ceaser {
                 .device_wait_idle()
                 .expect("something wrong while waiting");
             
-            for b in &self.buffers {
-                self.logical_device.destroy_buffer(b.buffer, None);
-            }
+                for m in &self.models {
+                    if let Some(vb) = &m.vertexbuffer {
+                        //Do later
+                        todo!();
+                    }
+                    if let Some(ib) = &m.instancebuffer {
+                        todo!();
+                    }
+                }
             self.pools.cleanup(&self.logical_device);
             self.pipeline.cleanup(&self.logical_device);
             self.logical_device

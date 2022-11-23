@@ -5,6 +5,9 @@ use ash::vk;
 pub struct Buffer {
     pub buffer: vk::Buffer,
     pub allocation: gpu_allocator::vulkan::Allocation,
+    pub size_in_bytes: u64,
+    pub usage: vk::BufferUsageFlags,
+    pub memory_usage: gpu_allocator::MemoryLocation
 }
 
 impl Buffer {
@@ -39,13 +42,28 @@ impl Buffer {
         Ok(Buffer {
             buffer,
             allocation,
+            size_in_bytes,
+            usage,
+            memory_usage
         })
     }
     pub fn fill<T: Sized>(
-        &self,
-        allocator: &gpu_allocator::vulkan::Allocator,
+        &mut self,
+        logical_device: &ash::Device,
+        allocator: &mut gpu_allocator::vulkan::Allocator,
         data: &[T],
     ) -> Result<(),  Box<dyn std::error::Error>> {
+        let bytes_to_write = (data.len() * std::mem::size_of::<T>()) as u64;
+        if bytes_to_write > self.size_in_bytes {
+            let newbuffer = Buffer::new(
+                logical_device,
+                allocator,
+                bytes_to_write,
+                self.usage,
+                self.memory_usage,
+            )?;
+            *self = newbuffer;
+        }
         let data_ptr: *mut T = self.allocation.mapped_ptr().unwrap().cast().as_ptr();
         unsafe { data_ptr.copy_from_nonoverlapping(data.as_ptr(), data.len()) };
         Ok(())

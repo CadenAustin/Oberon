@@ -14,6 +14,7 @@ egui = "0.16.1"
 vk-shader-macros = "0.2.2"
 gpu-allocator = "0.21.0"
 ash-window = "0.10.0"
+nalgebra = "*"
 
 [lib]
 name = "ceaser"

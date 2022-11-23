@@ -21,8 +21,7 @@ pub fn fill_command_buffers(
     render_pass: &vk::RenderPass,
     swapchain: &Swapchain,
     pipeline: &Pipeline,
-    vb1: &vk::Buffer,
-    vb2: &vk::Buffer,
+    models: &Vec<crate::model::Model<[f32; 3], crate::model::InstanceData>>,
 ) -> Result<(), vk::Result> {
     for (i, &command_buffer) in command_buffers.iter().enumerate() {
         let command_buffer_begininfo = vk::CommandBufferBeginInfo::builder();
@@ -30,11 +29,19 @@ pub fn fill_command_buffers(
             logical_device.begin_command_buffer(command_buffer, &command_buffer_begininfo)?;
         }
 
-        let clearvalues = [vk::ClearValue {
-            color: vk::ClearColorValue {
-                float32: [0.0, 0.0, 0.08, 1.0],
+        let clearvalues = [
+            vk::ClearValue {
+                color: vk::ClearColorValue {
+                    float32: [0.0, 0.0, 0.08, 1.0],
+                },
             },
-        }];
+            vk::ClearValue {
+                depth_stencil: vk::ClearDepthStencilValue {
+                    depth: 1.0,
+                    stencil: 0,
+                },
+            },
+        ];
         let render_pass_begininfo = vk::RenderPassBeginInfo::builder()
             .render_pass(*render_pass)
             .framebuffer(swapchain.framebuffers[i])
@@ -57,9 +64,10 @@ pub fn fill_command_buffers(
                 pipeline.pipeline,
             );
 
-            logical_device.cmd_bind_vertex_buffers(command_buffer, 0, &[*vb1], &[0]);
-            logical_device.cmd_bind_vertex_buffers(command_buffer, 1, &[*vb2], &[0]);
-            logical_device.cmd_draw(command_buffer, 6, 1, 0, 0);
+            for m in models {
+                m.draw(logical_device, command_buffer);
+            }
+
             logical_device.cmd_end_render_pass(command_buffer);
             logical_device.end_command_buffer(command_buffer)?;
         }

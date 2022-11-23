@@ -1,6 +1,6 @@
 use ash::vk;
 
-use crate::ceaser::{queue::Pools, swap_chain::Swapchain, pipeline::Pipeline};
+use crate::ceaser::{queue::Pools};
 
 pub fn create_command_buffers(
     logical_device: &ash::Device,

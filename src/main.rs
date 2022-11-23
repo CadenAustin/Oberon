@@ -1,8 +1,8 @@
 use ash::vk;
-use ceaser::camera::Camera;
-use hamlet::model::{Model, InstanceData};
-use winit::event::{Event, WindowEvent};
+use ceaser::{camera::Camera};
+use hamlet::{InstanceData, Model, light::{LightManager, DirectionalLight, PointLight}};
 use nalgebra as na;
+use winit::event::{Event, WindowEvent};
 
 mod ceaser;
 mod hamlet;
@@ -11,19 +11,44 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let eventloop = winit::event_loop::EventLoop::new();
     let window = winit::window::Window::new(&eventloop)?;
     let mut ceaser = ceaser::Ceaser::new(window)?;
-    let mut ico = Model::icosahedron();
-    ico.insert_visibly(InstanceData {
-        model_matrix: na::Matrix4::new_scaling(0.5).into(),
-        color: [0.5, 0.0, 0.0],
+    let mut sphere = Model::sphere(3);
+    for i in 0..10 {
+        for j in 0..10 {
+            sphere.insert_visibly(InstanceData::from_matrix_and_color(
+                na::Matrix4::new_translation(&na::Vector3::new(i as f32 - 5., j as f32 + 5., 10.0))
+                    * na::Matrix4::new_scaling(0.5),
+                [0., 0., 0.8],
+                i as f32 * 0.1,
+                j as f32 * 0.1,
+            ));
+        }
+    }
+
+    sphere.update_vertexbuffer(&ceaser.logical_device, &mut ceaser.allocator)?;
+    sphere.update_indexbuffer(&ceaser.logical_device, &mut ceaser.allocator)?;
+    sphere.update_instancebuffer(&ceaser.logical_device, &mut ceaser.allocator)?;
+
+    ceaser.models = vec![sphere];
+
+    let mut lights = LightManager::default();
+    lights.add_light(DirectionalLight {
+        direction: na::Vector3::new(-1., -1., 0.),
+        illuminance: [10.1, 10.1, 10.1],
+    });
+    lights.add_light(PointLight {
+        position: na::Point3::new(0.1, -3.0, -3.0),
+        luminous_flux: [100.0, 100.0, 100.0],
+    });
+    lights.add_light(PointLight {
+        position: na::Point3::new(0.1, -3.0, -3.0),
+        luminous_flux: [100.0, 100.0, 100.0],
+    });
+    lights.add_light(PointLight {
+        position: na::Point3::new(0.1, -3.0, -3.0),
+        luminous_flux: [100.0, 100.0, 100.0],
     });
 
-    ico.update_vertexbuffer(&ceaser.logical_device, &mut ceaser.allocator);
-    ico.update_indexbuffer(&ceaser.logical_device, &mut ceaser.allocator);
-    ico.update_instancebuffer(&ceaser.logical_device, &mut ceaser.allocator);
-
-    
-    ceaser.models = vec![ico];
-    
+    lights.update_buffer(&ceaser.logical_device, &mut ceaser.allocator, &mut ceaser.light_buffer, &mut ceaser.descriptor_sets_light)?;
 
     let mut camera = Camera::builder().build();
 
@@ -38,7 +63,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             ceaser.window.request_redraw();
         }
         Event::RedrawRequested(_) => {
-            ceaser.swapchain.current_image = (ceaser.swapchain.current_image + 1) % ceaser.swapchain.amount_of_images as usize;
+            ceaser.swapchain.current_image =
+                (ceaser.swapchain.current_image + 1) % ceaser.swapchain.amount_of_images as usize;
             let (image_index, _) = unsafe {
                 ceaser
                     .swapchain
@@ -53,22 +79,41 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             };
 
             unsafe {
-                ceaser.logical_device.wait_for_fences(&[ceaser.swapchain.may_begin_drawing[ceaser.swapchain.current_image]], true, std::u64::MAX).expect("fence-waiting");
-                ceaser.logical_device.reset_fences(&[ceaser.swapchain.may_begin_drawing[ceaser.swapchain.current_image]]).expect("resetting fences");
+                ceaser
+                    .logical_device
+                    .wait_for_fences(
+                        &[ceaser.swapchain.may_begin_drawing[ceaser.swapchain.current_image]],
+                        true,
+                        std::u64::MAX,
+                    )
+                    .expect("fence-waiting");
+                ceaser
+                    .logical_device
+                    .reset_fences(&[
+                        ceaser.swapchain.may_begin_drawing[ceaser.swapchain.current_image]
+                    ])
+                    .expect("resetting fences");
             }
 
-            camera.update_buffer(&ceaser.logical_device, &mut ceaser.allocator, &mut ceaser.uniform_buffer);
+            camera.update_buffer(
+                &ceaser.logical_device,
+                &mut ceaser.allocator,
+                &mut ceaser.uniform_buffer,
+            );
             for m in &mut ceaser.models {
-                m.update_instancebuffer(&ceaser.logical_device, &mut ceaser.allocator).expect("Error updating instance buffers");
+                m.update_instancebuffer(&ceaser.logical_device, &mut ceaser.allocator)
+                    .expect("Error updating instance buffers");
             }
 
             ceaser
                 .update_commandbuffer(image_index as usize)
                 .expect("updating the command buffer");
 
-            let semaphores_available = [ceaser.swapchain.image_available[ceaser.swapchain.current_image]];
+            let semaphores_available =
+                [ceaser.swapchain.image_available[ceaser.swapchain.current_image]];
             let waiting_stages = [vk::PipelineStageFlags::COLOR_ATTACHMENT_OUTPUT];
-            let semaphores_finished = [ceaser.swapchain.rendering_finished[ceaser.swapchain.current_image]];
+            let semaphores_finished =
+                [ceaser.swapchain.rendering_finished[ceaser.swapchain.current_image]];
             let command_buffers = [ceaser.command_buffers[image_index as usize]];
             let submit_info = [vk::SubmitInfo::builder()
                 .wait_semaphores(&semaphores_available)
@@ -101,8 +146,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     .queue_present(ceaser.queues.graphics_queue, &present_info)
                     .expect("queue presentation");
             };
-
-            
         }
         Event::WindowEvent {
             event: WindowEvent::KeyboardInput { input, .. },

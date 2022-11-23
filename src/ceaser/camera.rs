@@ -1,5 +1,4 @@
 use super::buffer::Buffer;
-use ash::vk;
 use nalgebra as na;
 
 pub struct CameraBuilder {
@@ -12,6 +11,7 @@ pub struct CameraBuilder {
     far: f32,
 }
 
+#[allow(dead_code)]
 impl CameraBuilder {
     pub fn build(self) -> Camera {
         if self.far < self.near {

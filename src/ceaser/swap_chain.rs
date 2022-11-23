@@ -1,5 +1,4 @@
 use ash::vk;
-use gpu_allocator::vulkan::{Allocator, AllocatorCreateDesc};
 
 use crate::ceaser::{surface::Surface, queue::{QueueFamilies, Queues}};
 
@@ -33,7 +32,7 @@ impl Swapchain {
     ) -> Result<Swapchain, vk::Result> {
         let surface_capabilities = surfaces.get_capabilities(physical_device)?;
         let extent = surface_capabilities.current_extent;
-        let surface_present_modes = surfaces.get_present_modes(physical_device)?;
+        let _surface_present_modes = surfaces.get_present_modes(physical_device)?;
         let surface_format = *surfaces.get_formats(physical_device)?.first().unwrap();
         let queuefamilies = [queue_families.graphics_q_index.unwrap()];
         let swapchain_create_info = vk::SwapchainCreateInfoKHR::builder()
@@ -104,7 +103,7 @@ impl Swapchain {
         };
         let depth_image_allocation = allocator.allocate(&depth_image_allocation_info).unwrap();
         unsafe {
-            logical_device.bind_image_memory(depth_image, depth_image_allocation.memory(), depth_image_allocation.offset());
+            logical_device.bind_image_memory(depth_image, depth_image_allocation.memory(), depth_image_allocation.offset())?;
         }
         let subresource_range = vk::ImageSubresourceRange::builder()
             .aspect_mask(vk::ImageAspectFlags::DEPTH)

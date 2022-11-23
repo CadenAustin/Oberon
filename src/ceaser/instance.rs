@@ -24,10 +24,10 @@ pub fn init_instance(
     let appname = std::ffi::CString::new("The Black Window").unwrap();
     let app_info = vk::ApplicationInfo::builder()
         .application_name(&appname)
-        .application_version(vk::make_version(0, 0, 1))
+        .application_version(vk::make_api_version(0, 0, 1, 0))
         .engine_name(&enginename)
-        .engine_version(vk::make_version(0, 42, 0))
-        .api_version(vk::make_version(1, 0, 106));
+        .engine_version(vk::make_api_version(0, 42, 0, 0))
+        .api_version(vk::make_api_version(1, 0, 106, 0));
     let layer_names_c: Vec<std::ffi::CString> = layer_names
         .iter()
         .map(|&ln| std::ffi::CString::new(ln).unwrap())

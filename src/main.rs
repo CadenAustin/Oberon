@@ -18,8 +18,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 na::Matrix4::new_translation(&na::Vector3::new(i as f32 - 5., j as f32 + 5., 10.0))
                     * na::Matrix4::new_scaling(0.5),
                 [0., 0., 0.8],
-                i as f32 * 0.1,
-                j as f32 * 0.1,
             ));
         }
     }
@@ -31,18 +29,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     ceaser.models = vec![sphere];
 
     let mut lights = LightManager::default();
-    lights.add_light(DirectionalLight {
-        direction: na::Vector3::new(-1., -1., 0.),
-        illuminance: [10.1, 10.1, 10.1],
-    });
-    lights.add_light(PointLight {
-        position: na::Point3::new(0.1, -3.0, -3.0),
-        luminous_flux: [100.0, 100.0, 100.0],
-    });
-    lights.add_light(PointLight {
-        position: na::Point3::new(0.1, -3.0, -3.0),
-        luminous_flux: [100.0, 100.0, 100.0],
-    });
     lights.add_light(PointLight {
         position: na::Point3::new(0.1, -3.0, -3.0),
         luminous_flux: [100.0, 100.0, 100.0],

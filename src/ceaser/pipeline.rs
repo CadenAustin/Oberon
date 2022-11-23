@@ -33,83 +33,82 @@ impl Pipeline {
             .name(&mainfunctionname);
         let shader_stages = vec![vertexshader_stage.build(), fragmentshader_stage.build()];
         let vertex_attrib_descs = [
+            //position
             vk::VertexInputAttributeDescription {
                 binding: 0,
                 location: 0,
                 offset: 0,
                 format: vk::Format::R32G32B32_SFLOAT,
             },
+            //normal
             vk::VertexInputAttributeDescription {
                 binding: 0,
                 location: 1,
                 offset: 12,
                 format: vk::Format::R32G32B32_SFLOAT,
             },
+            //model_matrix
             vk::VertexInputAttributeDescription {
                 binding: 1,
                 location: 2,
                 offset: 0,
                 format: vk::Format::R32G32B32A32_SFLOAT,
             },
+            //model_matrix
             vk::VertexInputAttributeDescription {
                 binding: 1,
                 location: 3,
                 offset: 16,
                 format: vk::Format::R32G32B32A32_SFLOAT,
             },
+            //model_matrix
             vk::VertexInputAttributeDescription {
                 binding: 1,
                 location: 4,
                 offset: 32,
                 format: vk::Format::R32G32B32A32_SFLOAT,
             },
+            //model_matrix
             vk::VertexInputAttributeDescription {
                 binding: 1,
                 location: 5,
                 offset: 48,
                 format: vk::Format::R32G32B32A32_SFLOAT,
             },
+            //inverse_model_matrix
             vk::VertexInputAttributeDescription {
                 binding: 1,
                 location: 6,
                 offset: 64,
                 format: vk::Format::R32G32B32A32_SFLOAT,
             },
+            //inverse_model_matrix
             vk::VertexInputAttributeDescription {
                 binding: 1,
                 location: 7,
                 offset: 80,
                 format: vk::Format::R32G32B32A32_SFLOAT,
             },
+            //inverse_model_matrix
             vk::VertexInputAttributeDescription {
                 binding: 1,
                 location: 8,
                 offset: 96,
                 format: vk::Format::R32G32B32A32_SFLOAT,
             },
+            //inverse_model_matrix
             vk::VertexInputAttributeDescription {
                 binding: 1,
                 location: 9,
                 offset: 112,
                 format: vk::Format::R32G32B32A32_SFLOAT,
             },
+            //color
             vk::VertexInputAttributeDescription {
                 binding: 1,
                 location: 10,
                 offset: 128,
                 format: vk::Format::R32G32B32_SFLOAT,
-            },
-            vk::VertexInputAttributeDescription {
-                binding: 1,
-                location: 11,
-                offset: 140,
-                format: vk::Format::R32_SFLOAT,
-            },
-             vk::VertexInputAttributeDescription {
-                binding: 1,
-                location: 12,
-                offset: 144,
-                format: vk::Format::R32_SFLOAT,
             },
         ];
         let vertex_binding_descs = [
@@ -120,7 +119,7 @@ impl Pipeline {
             },
             vk::VertexInputBindingDescription {
                 binding: 1,
-                stride: 148,
+                stride: 140,
                 input_rate: vk::VertexInputRate::INSTANCE,
             },
         ];

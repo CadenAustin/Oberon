@@ -5,12 +5,19 @@ use crate::ceaser::buffer::Buffer;
 
 pub struct DirectionalLight {
     pub direction: na::Vector3<f32>,
-    pub illuminance: [f32; 3], //in lx = lm/m^2
+    pub ambient: [f32; 3], 
+    pub diffuse: [f32; 3], 
+    pub specular: [f32; 3],
 }
 
 pub struct PointLight {
-    pub position: na::Point3<f32>, //in m
-    pub luminous_flux: [f32; 3],   //in lm
+    pub position: na::Point3<f32>,
+    pub constant: f32,
+    pub linear: f32,
+    pub quadratic: f32,
+    pub ambient: [f32; 3], 
+    pub diffuse: [f32; 3], 
+    pub specular: [f32; 3], 
 }
 
 pub enum Light {
@@ -71,17 +78,41 @@ impl LightManager {
             data.push(dl.direction.x);
             data.push(dl.direction.y);
             data.push(dl.direction.z);
-            data.push(dl.illuminance[0]);
-            data.push(dl.illuminance[1]);
-            data.push(dl.illuminance[2]);
+            data.push(0.0);
+            data.push(dl.ambient[0]);
+            data.push(dl.ambient[1]);
+            data.push(dl.ambient[2]);
+            data.push(0.0);
+            data.push(dl.diffuse[0]);
+            data.push(dl.diffuse[1]);
+            data.push(dl.diffuse[2]);
+            data.push(0.0);
+            data.push(dl.specular[0]);
+            data.push(dl.specular[1]);
+            data.push(dl.specular[2]);
+            data.push(0.0);
         }
         for pl in &self.point_lights {
             data.push(pl.position.x);
             data.push(pl.position.y);
             data.push(pl.position.z);
-            data.push(pl.luminous_flux[0]);
-            data.push(pl.luminous_flux[1]);
-            data.push(pl.luminous_flux[2]);
+            data.push(0.0);
+            data.push(pl.constant);
+            data.push(pl.linear);
+            data.push(pl.quadratic);
+            data.push(0.0);
+            data.push(pl.ambient[0]);
+            data.push(pl.ambient[1]);
+            data.push(pl.ambient[2]);
+            data.push(0.0);
+            data.push(pl.diffuse[0]);
+            data.push(pl.diffuse[1]);
+            data.push(pl.diffuse[2]);
+            data.push(0.0);
+            data.push(pl.specular[0]);
+            data.push(pl.specular[1]);
+            data.push(pl.specular[2]);
+            data.push(0.0);
         }
         buffer.fill(logical_device, allocator, &data)?;
         for descset in descriptor_sets_light {

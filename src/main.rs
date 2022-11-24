@@ -29,11 +29,22 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     ceaser.models = vec![sphere];
 
     let mut lights = LightManager::default();
-    lights.add_light(PointLight {
-        position: na::Point3::new(0.1, -3.0, -3.0),
-        luminous_flux: [100.0, 100.0, 100.0],
+    lights.add_light(DirectionalLight {
+        direction: na::Vector3::new(-0.2, -1.0, -0.3),
+        ambient: na::Vector3::new(0.3, 0.24, 0.14),
+        diffuse: na::Vector3::new( 0.7, 0.42, 0.26),
+        specular: na::Vector3::new(0.5, 0.5, 0.5),
+ 
     });
-
+    lights.add_light(PointLight {
+        position: na::Point3::new(-0.2, -1.0, -0.3),
+        constant: 1.0,
+        linear: 0.09,
+        quadratic: 0.032,
+        ambient: na::Vector3::new(0.3, 0.24, 0.14),
+        diffuse: na::Vector3::new( 0.7, 0.42, 0.26),
+        specular: na::Vector3::new(0.5, 0.5, 0.5),
+    });
     lights.update_buffer(&ceaser.logical_device, &mut ceaser.allocator, &mut ceaser.light_buffer, &mut ceaser.descriptor_sets_light)?;
 
     let mut camera = Camera::builder().build();

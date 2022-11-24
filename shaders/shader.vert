@@ -12,8 +12,8 @@ layout (set=0, binding=0) uniform UniformBufferObject {
 } ubo;
 
 readonly layout (set=1, binding=0) buffer StorageBufferObject {
-	float num_directional;
-	float num_point;
+	int num_directional;
+	int num_point;
 	vec3 data[];
 } sbo;
 
@@ -24,8 +24,8 @@ layout (location=3) out vec3 v_camera_coordinates;
 layout (location=4) out vec3 v_frag_position;
 
 void main() {
-    v_frag_position = ubo.projection_matrix * ubo.view_matrix * model_matrix * vec4(position, 1.0);
-    gl_Position = v_frag_position;
+    v_frag_position = vec3(ubo.projection_matrix * ubo.view_matrix * model_matrix * vec4(position, 1.0));
+    gl_Position = ubo.projection_matrix * ubo.view_matrix * model_matrix * vec4(position, 1.0);
 	v_color = color;
     v_normal = vec3(transpose(inverse_model_matrix)*vec4(normal,0.0));
     v_worldpos = vec3(model_matrix*vec4(position,1.0));

@@ -5,9 +5,9 @@ use crate::ceaser::buffer::Buffer;
 
 pub struct DirectionalLight {
     pub direction: na::Vector3<f32>,
-    pub ambient: [f32; 3], 
-    pub diffuse: [f32; 3], 
-    pub specular: [f32; 3],
+    pub ambient: na::Vector3<f32>, 
+    pub diffuse: na::Vector3<f32>, 
+    pub specular: na::Vector3<f32>,
 }
 
 pub struct PointLight {
@@ -15,9 +15,9 @@ pub struct PointLight {
     pub constant: f32,
     pub linear: f32,
     pub quadratic: f32,
-    pub ambient: [f32; 3], 
-    pub diffuse: [f32; 3], 
-    pub specular: [f32; 3], 
+    pub ambient: na::Vector3<f32>, 
+    pub diffuse: na::Vector3<f32>, 
+    pub specular: na::Vector3<f32>, 
 }
 
 pub enum Light {

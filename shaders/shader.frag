@@ -9,8 +9,8 @@ layout (location=3) in vec3 v_camera_coordinates;
 layout (location=4) in vec3 v_frag_position;
 
 readonly layout (set=1, binding=0) buffer StorageBufferObject {
-	float num_directional;
-	float num_point;
+	int num_directional;
+	int num_point;
 	vec3 data[];
 } light_sbo;
 
@@ -38,6 +38,8 @@ struct PointLight {
 
 vec3 CalcDirLight(DirectionalLight light, vec3 normal, vec3 viewDir)
 {
+	return vec3(0.05, 0.05, 0.05);
+	/*
     vec3 lightDir = normalize(-light.direction);
     // diffuse shading
     float diff = max(dot(normal, lightDir), 0.0);
@@ -49,10 +51,13 @@ vec3 CalcDirLight(DirectionalLight light, vec3 normal, vec3 viewDir)
     vec3 diffuse  = light.diffuse  * diff * vec3(texture(material.diffuse, TexCoords));
     vec3 specular = light.specular * spec * vec3(texture(material.specular, TexCoords));
     return (ambient + diffuse + specular);
+	*/
 }  
 
 vec3 CalcPointLight(PointLight light, vec3 normal, vec3 fragPos, vec3 viewDir)
 {
+	return vec3(0.05, 0.05, 0.05);
+	/*
     vec3 lightDir = normalize(light.position - fragPos);
     // diffuse shading
     float diff = max(dot(normal, lightDir), 0.0);
@@ -71,25 +76,34 @@ vec3 CalcPointLight(PointLight light, vec3 normal, vec3 fragPos, vec3 viewDir)
     diffuse  *= attenuation;
     specular *= attenuation;
     return (ambient + diffuse + specular);
+	*/
 } 
 
 void main(){
+	vec3 color_output = v_color;
 	vec3 norm = normalize(v_normal);
     vec3 viewDir = normalize(v_camera_coordinates - v_frag_position);
-	for (int i=0; i< light_sbo.number_directional; i++){
-		vec3 dir_pos = light_sbo.data[2*i];
-		vec3 dir_amb = light_sbo.data[2*i+1];
-		vec3 dir_amb = light_sbo.data[2*i+1];
-		vec3 dir_amb = light_sbo.data[2*i+1];
-		DirectionalLight dlight = DirectionalLight(normalize(data1),data2);
+	int number_directional = light_sbo.num_directional;
+	int number_point = light_sbo.num_point;
+	for (int i=0; i< number_directional; i++){
+		vec3 dir_pos = light_sbo.data[4*i];
+		vec3 dir_ambi = light_sbo.data[4*i+1];
+		vec3 dir_diff = light_sbo.data[4*i+2];
+		vec3 dir_spec = light_sbo.data[4*i+3];
+		DirectionalLight dlight = DirectionalLight(normalize(dir_pos), dir_ambi, dir_diff, dir_spec);
+		CalcDirLight(dlight, norm, viewDir);
 	}
 
-	for (int i=0;i<light_sbo.number_point;i++){	
-		vec3 data1=light_sbo.data[2*i+2*number_directional];
-		vec3 data2=light_sbo.data[2*i+1+2*number_directional];
-		PointLight light = PointLight(data1,data2);
-		CalcPointLight(PointLight, )
+	for (int i=0;i< number_point;i++){	
+		vec3 p_pos = light_sbo.data[5*i + 4*number_directional];
+		vec3 p_floats = light_sbo.data[5*i+1+4*number_directional];
+		vec3 p_ambi = light_sbo.data[5*i+2+4*number_directional];
+		vec3 p_diff = light_sbo.data[5*i+3+4*number_directional];
+		vec3 p_spec = light_sbo.data[5*i+4+4*number_directional];
+	
+		PointLight light = PointLight(p_pos, p_floats[0], p_floats[1], p_floats[2], p_ambi, p_diff, p_spec);
+		color_output += CalcPointLight(light, norm, v_frag_position, viewDir);
 	}
 
-	r_color=vec4(v_color,1.0);
+	r_color=vec4(color_output, 1.0);
 }

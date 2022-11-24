@@ -63,25 +63,31 @@ impl LightManager {
         allocator: &mut gpu_allocator::vulkan::Allocator,
         buffer: &mut Buffer,
         descriptor_sets_light: &mut [vk::DescriptorSet],
-    ) -> Result<(),  Box<dyn std::error::Error>> {
+    ) -> Result<(), Box<dyn std::error::Error>> {
         let mut data: Vec<f32> = vec![];
         data.push(self.directional_lights.len() as f32);
         data.push(self.point_lights.len() as f32);
+        data.push(0.0);
+        data.push(0.0);
         for dl in &self.directional_lights {
             data.push(dl.direction.x);
             data.push(dl.direction.y);
             data.push(dl.direction.z);
+            data.push(0.0);
             data.push(dl.illuminance[0]);
             data.push(dl.illuminance[1]);
             data.push(dl.illuminance[2]);
+            data.push(0.0);
         }
         for pl in &self.point_lights {
             data.push(pl.position.x);
             data.push(pl.position.y);
             data.push(pl.position.z);
+            data.push(0.0);
             data.push(pl.luminous_flux[0]);
             data.push(pl.luminous_flux[1]);
             data.push(pl.luminous_flux[2]);
+            data.push(0.0);
         }
         buffer.fill(logical_device, allocator, &data)?;
         for descset in descriptor_sets_light {

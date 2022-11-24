@@ -12,17 +12,26 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let window = winit::window::Window::new(&eventloop)?;
     let mut ceaser = ceaser::Ceaser::new(window)?;
     let mut sphere = Model::sphere(3);
+    
+    sphere.insert_visibly(InstanceData::from_matrix_and_color(
+        na::Matrix4::new_scaling(0.5),
+        [0.955, 0.638, 0.538],
+        1.,
+        0.5,
+    ));
+    /*
     for i in 0..10 {
         for j in 0..10 {
             sphere.insert_visibly(InstanceData::from_matrix_and_color(
                 na::Matrix4::new_translation(&na::Vector3::new(i as f32 - 5., j as f32 + 5., 10.0))
                     * na::Matrix4::new_scaling(0.5),
-                [0., 0., 0.8],
+                    [0.955, 0.638, 0.538],
                 i as f32 * 0.1,
                 j as f32 * 0.1,
             ));
         }
     }
+    */
 
     sphere.update_vertexbuffer(&ceaser.logical_device, &mut ceaser.allocator)?;
     sphere.update_indexbuffer(&ceaser.logical_device, &mut ceaser.allocator)?;
